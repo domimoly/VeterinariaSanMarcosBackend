@@ -160,7 +160,7 @@ public class CitaService {
       return List.of();
     }
     if (dia == DayOfWeek.SATURDAY) {
-      return List.of(new LocalTime[] {LocalTime.of(10, 0), LocalTime.of(13, 0)});
+      return List.<LocalTime[]>of(new LocalTime[] {LocalTime.of(10, 0), LocalTime.of(13, 0)});
     }
     return List.of(
       new LocalTime[] {LocalTime.of(9, 0), LocalTime.of(13, 0)},
