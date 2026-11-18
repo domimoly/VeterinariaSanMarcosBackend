@@ -61,6 +61,7 @@ public class MascotaService {
     m.setPesoKg(r.pesoKg());
     m.setFechaNacimiento(r.fechaNacimiento());
     m.setEsterilizada(r.esterilizada());
+    m.setObservaciones(r.observaciones() == null ? null : r.observaciones().trim());
     return m;
   }
 }

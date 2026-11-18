@@ -36,4 +36,7 @@ public class Mascota {
 
   @Column(nullable = false)
   private boolean esterilizada;
+
+  @Column(length = 300)
+  private String observaciones;
 }
