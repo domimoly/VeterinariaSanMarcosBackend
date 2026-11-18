@@ -12,19 +12,30 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class DatosIniciales {
 
+  private void crearSiNoExiste(UsuarioRepository repo, PasswordEncoder encoder,
+      String nombre, String correo, String password, String rol) {
+    if (repo.findByCorreoIgnoreCase(correo).isEmpty()) {
+      Usuario u = new Usuario();
+      u.setNombre(nombre);
+      u.setCorreo(correo);
+      u.setPassword(encoder.encode(password));
+      u.setRol(rol);
+      repo.save(u);
+    }
+  }
+
+  /** Cuentas internas de ejemplo; los tutores se registran solos desde la web. */
   @Bean
   CommandLineRunner usuariosIniciales(UsuarioRepository repo, PasswordEncoder encoder,
-      @Value("${app.recepcion.correo}") String correo,
-      @Value("${app.recepcion.password}") String password) {
+      @Value("${app.recepcion.correo}") String correoRecepcion,
+      @Value("${app.recepcion.password}") String passwordRecepcion,
+      @Value("${app.admin.correo}") String correoAdmin,
+      @Value("${app.admin.password}") String passwordAdmin) {
     return args -> {
-      if (repo.findByCorreoIgnoreCase(correo).isEmpty()) {
-        Usuario u = new Usuario();
-        u.setNombre("Recepción San Marcos");
-        u.setCorreo(correo);
-        u.setPassword(encoder.encode(password));
-        u.setRol(AuthService.ROL_RECEPCIONISTA);
-        repo.save(u);
-      }
+      crearSiNoExiste(repo, encoder, "Recepción San Marcos", correoRecepcion,
+        passwordRecepcion, AuthService.ROL_RECEPCIONISTA);
+      crearSiNoExiste(repo, encoder, "Administrador San Marcos", correoAdmin,
+        passwordAdmin, AuthService.ROL_ADMINISTRADOR);
     };
   }
 }

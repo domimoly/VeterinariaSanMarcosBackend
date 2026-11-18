@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 public class AuthService {
   public static final String ROL_TUTOR = "TUTOR";
   public static final String ROL_RECEPCIONISTA = "RECEPCIONISTA";
+  public static final String ROL_ADMINISTRADOR = "ADMINISTRADOR";
 
   private final UsuarioRepository usuarios;
   private final PasswordEncoder encoder;
