@@ -29,7 +29,7 @@ public class SecurityConfig {
         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
         // Todos los usuarios con sesión leen el catálogo; solo recepción lo modifica
         .requestMatchers(HttpMethod.GET, "/api/servicios/**").authenticated()
-        .requestMatchers("/api/servicios/**").hasRole("RECEPCIONISTA")
+        .requestMatchers("/api/servicios/**").hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
         .anyRequest().denyAll())
       .exceptionHandling(e -> e.authenticationEntryPoint(
         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

@@ -31,6 +31,24 @@ public class AuthExceptionHandler {
       .body(Map.of("mensaje", e.getMessage()));
   }
 
+  @ExceptionHandler(CuentaDesactivadaException.class)
+  public ResponseEntity<Map<String, String>> cuentaDesactivada(CuentaDesactivadaException e) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+      .body(Map.of("mensaje", e.getMessage()));
+  }
+
+  @ExceptionHandler(RecursoNoEncontradoException.class)
+  public ResponseEntity<Map<String, String>> noEncontrado(RecursoNoEncontradoException e) {
+    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+      .body(Map.of("mensaje", e.getMessage()));
+  }
+
+  @ExceptionHandler(ReglaNegocioException.class)
+  public ResponseEntity<Map<String, String>> reglaDeNegocio(ReglaNegocioException e) {
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+      .body(Map.of("mensaje", e.getMessage()));
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Map<String, Object>> validacion(MethodArgumentNotValidException e) {
     Map<String, String> errores = new LinkedHashMap<>();

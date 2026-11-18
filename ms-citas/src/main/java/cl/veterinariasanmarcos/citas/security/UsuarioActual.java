@@ -13,9 +13,17 @@ public class UsuarioActual {
     return a == null ? null : String.valueOf(a.getPrincipal());
   }
 
+  /** Personal de la clínica con acceso de gestión: la recepcionista y el administrador (acceso total). */
   public boolean esRecepcionista() {
+    return tieneRol("ROLE_RECEPCIONISTA") || tieneRol("ROLE_ADMINISTRADOR");
+  }
+
+  public boolean esAdministrador() {
+    return tieneRol("ROLE_ADMINISTRADOR");
+  }
+
+  private boolean tieneRol(String rol) {
     Authentication a = SecurityContextHolder.getContext().getAuthentication();
-    return a != null && a.getAuthorities().stream()
-      .anyMatch(g -> g.getAuthority().equals("ROLE_RECEPCIONISTA"));
+    return a != null && a.getAuthorities().stream().anyMatch(g -> g.getAuthority().equals(rol));
   }
 }

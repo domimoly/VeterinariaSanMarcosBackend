@@ -2,11 +2,13 @@ package cl.veterinariasanmarcos.auth.service;
 
 import cl.veterinariasanmarcos.auth.dto.*;
 import cl.veterinariasanmarcos.auth.exception.CorreoDuplicadoException;
+import cl.veterinariasanmarcos.auth.exception.CuentaDesactivadaException;
 import cl.veterinariasanmarcos.auth.model.Usuario;
 import cl.veterinariasanmarcos.auth.repository.UsuarioRepository;
 import cl.veterinariasanmarcos.auth.security.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
+import java.time.LocalDateTime;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +35,9 @@ public class AuthService {
     if (!encoder.matches(request.password(), usuario.getPassword())) {
       throw new BadCredentialsException("Credenciales inválidas");
     }
+    if (!usuario.isActivo()) {
+      throw new CuentaDesactivadaException("Tu cuenta está desactivada. Contacta a la clínica.");
+    }
     return respuesta(usuario);
   }
 
@@ -47,6 +52,7 @@ public class AuthService {
     usuario.setCorreo(correo);
     usuario.setPassword(encoder.encode(request.password()));
     usuario.setRol(ROL_TUTOR);
+    usuario.setCreadoEn(LocalDateTime.now());
     return respuesta(usuarios.save(usuario));
   }
 
@@ -66,8 +72,12 @@ public class AuthService {
       throw new JwtException("Falta el token");
     }
     Claims claims = jwt.validar(encabezado.substring(7).trim());
-    return usuarios.findByCorreoIgnoreCase(claims.getSubject())
+    Usuario usuario = usuarios.findByCorreoIgnoreCase(claims.getSubject())
       .orElseThrow(() -> new JwtException("Usuario no existe"));
+    if (!usuario.isActivo()) {
+      throw new JwtException("Cuenta desactivada");
+    }
+    return usuario;
   }
 
   private LoginResponse respuesta(Usuario u) {

@@ -29,7 +29,7 @@ public class SecurityConfig {
         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
         // Todos leen lo suyo (se valida el dueño); solo recepción escribe
         .requestMatchers(HttpMethod.GET, "/api/fichas/**").authenticated()
-        .requestMatchers("/api/fichas/**").hasRole("RECEPCIONISTA")
+        .requestMatchers("/api/fichas/**").hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
         .anyRequest().denyAll())
       .exceptionHandling(e -> e.authenticationEntryPoint(
         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

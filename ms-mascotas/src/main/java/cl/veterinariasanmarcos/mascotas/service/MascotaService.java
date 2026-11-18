@@ -47,7 +47,8 @@ public class MascotaService {
 
   public void eliminar(Long id) {
     Mascota m = buscar(id);
-    if (actual.esRecepcionista()) {
+    // La recepción no elimina mascotas; el tutor sí las suyas y el administrador (acceso total) cualquiera
+    if (actual.esRecepcionista() && !actual.esAdministrador()) {
       throw new AccesoDenegadoException("Solo el tutor puede eliminar a su mascota");
     }
     repository.delete(m);

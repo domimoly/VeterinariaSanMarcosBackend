@@ -1,6 +1,7 @@
 package cl.veterinariasanmarcos.auth.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,7 +23,13 @@ public class Usuario {
   @Column(nullable = false)
   private String password;
 
-  /** TUTOR o RECEPCIONISTA */
+  /** TUTOR, RECEPCIONISTA o ADMINISTRADOR */
   @Column(nullable = false)
   private String rol;
+
+  /** Una cuenta desactivada no puede iniciar sesión (los datos se conservan). */
+  @Column(nullable = false, columnDefinition = "boolean not null default true")
+  private boolean activo = true;
+
+  private LocalDateTime creadoEn;
 }

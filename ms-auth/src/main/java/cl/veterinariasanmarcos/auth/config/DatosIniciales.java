@@ -4,6 +4,7 @@ import cl.veterinariasanmarcos.auth.model.Usuario;
 import cl.veterinariasanmarcos.auth.repository.UsuarioRepository;
 import cl.veterinariasanmarcos.auth.service.AuthService;
 import org.springframework.beans.factory.annotation.Value;
+import java.time.LocalDateTime;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ public class DatosIniciales {
       u.setCorreo(correo);
       u.setPassword(encoder.encode(password));
       u.setRol(rol);
+      u.setCreadoEn(LocalDateTime.now());
       repo.save(u);
     }
   }

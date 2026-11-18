@@ -30,7 +30,7 @@ public class SecurityConfig {
         // El tutor solicita; recepción confirma y reagenda; ambos consultan y cancelan lo que les corresponde
         .requestMatchers(HttpMethod.POST, "/api/citas").hasRole("TUTOR")
         .requestMatchers(HttpMethod.PUT, "/api/citas/*/confirmar", "/api/citas/*/reagendar")
-          .hasRole("RECEPCIONISTA")
+          .hasAnyRole("RECEPCIONISTA", "ADMINISTRADOR")
         .requestMatchers("/api/citas/**").authenticated()
         .anyRequest().denyAll())
       .exceptionHandling(e -> e.authenticationEntryPoint(
