@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>cl.veterinariasanmarcos</groupId>
-	<artifactId>mascotas</artifactId>
+	<artifactId>ms-auth</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>mascotas</name>
-	<description>Microservicio mascotas de Veterinaria San Marcos</description>
+	<name>ms-auth</name>
+	<description>Servicio de autenticacion de Veterinaria San Marcos</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>

@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>cl.veterinariasanmarcos</groupId>
-	<artifactId>fichas</artifactId>
+	<artifactId>ms-fichas</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>fichas</name>
+	<name>ms-fichas</name>
 	<description>Microservicio fichas de Veterinaria San Marcos</description>
 	<properties>
 		<java.version>17</java.version>
