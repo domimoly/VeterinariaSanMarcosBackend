@@ -102,6 +102,7 @@ public class CitaService {
     c.setTutorCorreo(actual.correo());
     c.setMascotaId(mascota.id());
     c.setMascotaNombre(mascota.nombre());
+    c.setMascotaEspecie(mascota.especie());
     c.setServicioCodigo(servicio.codigo());
     c.setServicioNombre(servicio.nombre());
     c.setDuracionMin(servicio.duracionMin());
@@ -109,6 +110,9 @@ public class CitaService {
     c.setFecha(r.fecha());
     c.setHora(r.hora());
     c.setTelefono(r.telefono());
+    c.setTutorNombre(r.tutorNombre());
+    c.setCorreoContacto(r.correoContacto());
+    c.setMedioRecordatorio(r.medioRecordatorio());
     c.setObservaciones(r.observaciones());
     c.setEstado(Cita.PENDIENTE);
     c.setCreadaEn(LocalDateTime.now(ZONA));

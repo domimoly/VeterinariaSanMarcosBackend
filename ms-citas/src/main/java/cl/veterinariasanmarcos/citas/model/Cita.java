@@ -31,6 +31,7 @@ public class Cita {
   @Column(nullable = false)
   private Long mascotaId;
   private String mascotaNombre;
+  private String mascotaEspecie;
 
   @Column(nullable = false)
   private String servicioCodigo;
@@ -45,6 +46,13 @@ public class Cita {
   private LocalTime hora;
 
   private String telefono;
+
+  /** Nombre del tutor tal como lo ingresó al solicitar (el servicio auth guarda la cuenta). */
+  private String tutorNombre;
+  private String correoContacto;
+
+  /** Correo o Teléfono */
+  private String medioRecordatorio;
 
   @Column(length = 300)
   private String observaciones;
