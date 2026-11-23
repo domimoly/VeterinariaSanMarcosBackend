@@ -1,0 +1,142 @@
+# Veterinaria San Marcos - despliegue completo con Docker Compose (7 microservicios)
+# Uso: copiar .env.example a .env, completar los valores y ejecutar:
+#   docker compose up -d --build
+name: veterinaria-san-marcos
+
+x-microservicio: &microservicio
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+  environment: &entorno-comun
+    JWT_SECRET: ${JWT_SECRET}
+    APP_CORS_ALLOWED_ORIGIN: ${APP_CORS_ALLOWED_ORIGIN}
+
+services:
+  # Una sola instancia de MariaDB con 5 bases y 5 usuarios independientes
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      SERVICIOS_DB_PASSWORD: ${SERVICIOS_DB_PASSWORD}
+      MASCOTAS_DB_PASSWORD: ${MASCOTAS_DB_PASSWORD}
+      CITAS_DB_PASSWORD: ${CITAS_DB_PASSWORD}
+      FICHAS_DB_PASSWORD: ${FICHAS_DB_PASSWORD}
+      PRODUCTOS_DB_PASSWORD: ${PRODUCTOS_DB_PASSWORD}
+      PEDIDOS_DB_PASSWORD: ${PEDIDOS_DB_PASSWORD}
+    volumes:
+      - datos-db:/var/lib/mysql
+      - ./docker/mariadb-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  ms-auth:
+    <<: *microservicio
+    build: ./ms-auth
+    environment:
+      <<: *entorno-comun
+      AUTH_DB_URL: jdbc:mysql://db:3306/veterinaria_auth
+      AUTH_DB_USER: auth_app
+      AUTH_DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      RECEPCION_CORREO: ${RECEPCION_CORREO:-recepcion@veterinariasanmarcos.cl}
+      RECEPCION_PASSWORD: ${RECEPCION_PASSWORD}
+      ADMIN_CORREO: ${ADMIN_CORREO:-admin@veterinariasanmarcos.cl}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    ports:
+      - "127.0.0.1:8082:8082"   # solo accesible desde la propia instancia (Swagger por túnel SSH)
+
+  ms-servicios:
+    <<: *microservicio
+    build: ./ms-servicios
+    environment:
+      <<: *entorno-comun
+      SERVICIOS_DB_URL: jdbc:mysql://db:3306/veterinaria_servicios
+      SERVICIOS_DB_USER: servicios_app
+      SERVICIOS_DB_PASSWORD: ${SERVICIOS_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:8083:8083"
+
+  ms-mascotas:
+    <<: *microservicio
+    build: ./ms-mascotas
+    environment:
+      <<: *entorno-comun
+      MASCOTAS_DB_URL: jdbc:mysql://db:3306/veterinaria_mascotas
+      MASCOTAS_DB_USER: mascotas_app
+      MASCOTAS_DB_PASSWORD: ${MASCOTAS_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:8084:8084"
+
+  ms-citas:
+    <<: *microservicio
+    build: ./ms-citas
+    environment:
+      <<: *entorno-comun
+      CITAS_DB_URL: jdbc:mysql://db:3306/veterinaria_citas
+      CITAS_DB_USER: citas_app
+      CITAS_DB_PASSWORD: ${CITAS_DB_PASSWORD}
+      MASCOTAS_URL: http://ms-mascotas:8084
+      SERVICIOS_URL: http://ms-servicios:8083
+    ports:
+      - "127.0.0.1:8085:8085"
+
+  ms-fichas:
+    <<: *microservicio
+    build: ./ms-fichas
+    environment:
+      <<: *entorno-comun
+      FICHAS_DB_URL: jdbc:mysql://db:3306/veterinaria_fichas
+      FICHAS_DB_USER: fichas_app
+      FICHAS_DB_PASSWORD: ${FICHAS_DB_PASSWORD}
+      MASCOTAS_URL: http://ms-mascotas:8084
+    ports:
+      - "127.0.0.1:8086:8086"
+
+  ms-productos:
+    <<: *microservicio
+    build: ./ms-productos
+    environment:
+      <<: *entorno-comun
+      PRODUCTOS_DB_URL: jdbc:mysql://db:3306/veterinaria_productos
+      PRODUCTOS_DB_USER: productos_app
+      PRODUCTOS_DB_PASSWORD: ${PRODUCTOS_DB_PASSWORD}
+      CLAVE_INTERNA: ${CLAVE_INTERNA}
+    ports:
+      - "127.0.0.1:8087:8087"
+
+  ms-pedidos:
+    <<: *microservicio
+    build: ./ms-pedidos
+    environment:
+      <<: *entorno-comun
+      PEDIDOS_DB_URL: jdbc:mysql://db:3306/veterinaria_pedidos
+      PEDIDOS_DB_USER: pedidos_app
+      PEDIDOS_DB_PASSWORD: ${PEDIDOS_DB_PASSWORD}
+      PRODUCTOS_URL: http://ms-productos:8087
+      CLAVE_INTERNA: ${CLAVE_INTERNA}
+    ports:
+      - "127.0.0.1:8088:8088"
+
+  # React compilado + Nginx. Único punto público (puerto 80).
+  web:
+    build: ${FRONTEND_DIR:-../VeterinariaSanMarcosReact}
+    restart: unless-stopped
+    depends_on:
+      - ms-auth
+      - ms-servicios
+      - ms-mascotas
+      - ms-citas
+      - ms-fichas
+      - ms-productos
+      - ms-pedidos
+    ports:
+      - "80:80"
+
+volumes:
+  datos-db:
