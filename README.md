@@ -52,5 +52,3 @@ docker compose up -d --build
 - `docker/mariadb-init/01-crear-bases.sh` crea las 7 bases y sus usuarios la primera vez.
 - El frontend se toma de `FRONTEND_DIR` (por defecto `../VeterinariaSanMarcosReact`), que debe contener el `Dockerfile` del proyecto React.
 - Variables de entorno de cada servicio: `*_DB_URL`, `*_DB_USER`, `*_DB_PASSWORD`, `JWT_SECRET`, `APP_CORS_ALLOWED_ORIGIN`, `SERVER_ADDRESS` (opcional).
-
-Guía completa para AWS EC2: [DESPLIEGUE_AWS.md](DESPLIEGUE_AWS.md).
