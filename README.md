@@ -114,6 +114,89 @@ Get-NetTCPConnection -LocalPort 8082,8083,8084,8085,8086,8087,8088 -State Listen
    (`PUT /api/pedidos/{id}/cancelar`, devuelve el stock). Un pedido entregado no se puede cancelar.
 4. Cada tutor ve solo sus pedidos; el personal ve todos. El pago es una simulación en el frontend (se aprueba el 70 % de las veces).
 
+## Ejecución con Docker en Windows (laboratorio)
+
+Levanta todo el sistema igual que en AWS: los 7 microservicios, MariaDB y el frontend con Nginx.
+Requiere Docker Desktop y la carpeta del frontend (`VeterinariaSanMarcosReact`) **al lado** de esta carpeta.
+Todos los comandos son de PowerShell y se ejecutan en la carpeta `VeterinariaSanMarcosBackend`.
+
+**1. Encender Docker Desktop** y esperar a que abajo a la izquierda diga **Engine running**.
+Debe estar en modo contenedores de **Linux**. Si aparece el error `no matching manifest for windows(...)`, cambia el modo:
+
+```powershell
+& "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchLinuxEngine
+```
+
+**2. Apagar los servicios de la ejecución sin Docker**, porque usan los mismos puertos (8082 al 8088).
+Si Apache de XAMPP está usando el puerto 80, también hay que detenerlo.
+
+```powershell
+Get-NetTCPConnection -LocalPort 8082,8083,8084,8085,8086,8087,8088 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+**3. Crear el `.env` y traer el frontend.** Los valores son de prueba y el archivo `.env` no se sube a Git:
+
+```powershell
+@"
+JWT_SECRET=VmV0ZXJpbmFyaWFTYW5NYXJjb3MtY2xhdmUtbG9jYWwtZGUtcHJ1ZWJhcy0yMDI2LUpXVC1hYmM=
+APP_CORS_ALLOWED_ORIGIN=http://localhost
+CLAVE_INTERNA=clave-interna-local-123
+DB_ROOT_PASSWORD=RootLocal123
+AUTH_DB_PASSWORD=AuthLocal123
+SERVICIOS_DB_PASSWORD=ServLocal123
+MASCOTAS_DB_PASSWORD=MascLocal123
+CITAS_DB_PASSWORD=CitasLocal123
+FICHAS_DB_PASSWORD=FichasLocal123
+PRODUCTOS_DB_PASSWORD=ProdLocal123
+PEDIDOS_DB_PASSWORD=PedLocal123
+RECEPCION_PASSWORD=Recepcion123!
+ADMIN_PASSWORD=Admin123!
+"@ | Set-Content .env -Encoding ascii
+
+if (-not (Test-Path ..\VeterinariaSanMarcosReact)) { git clone https://github.com/domimoly/VeterinariaSanMarcosReact ..\VeterinariaSanMarcosReact }
+```
+
+**4. Construir y levantar todo.** La primera vez demora varios minutos, porque descarga las imágenes y compila los 7 servicios:
+
+```powershell
+docker compose up -d --build
+```
+
+**5. Comprobar.** Deben aparecer 9 contenedores en estado `running` (la base de datos, además, `healthy`):
+
+```powershell
+docker compose ps
+```
+
+Luego abre `http://localhost`: ahí está la página de la veterinaria. Los servicios también responden en `http://localhost:<puerto>/swagger-ui/index.html`.
+
+**Comandos útiles**
+
+| Para qué | Comando |
+|---|---|
+| Ver el estado de los contenedores | `docker compose ps -a` |
+| Ver los últimos mensajes de un servicio | `docker compose logs ms-auth --tail 50` |
+| Reiniciar un servicio | `docker compose restart ms-auth` |
+| Apagar todo y **conservar** los datos | `docker compose down` |
+| Apagar todo y **borrar** los datos (base de datos nueva) | `docker compose down -v` |
+
+**Problemas frecuentes**
+
+- `no matching manifest for windows(...)`: Docker está en modo Windows. Usa el comando `-SwitchLinuxEngine` del paso 1.
+- Los servicios se reinician y los logs dicen `Access denied for user 'auth_app'...`, o en la base solo existen `mysql`, `sys` y similares: el script `docker/mariadb-init/01-crear-bases.sh` no se ejecutó.
+  En el log de la base aparece `cannot execute: required file not found`, porque Windows guardó el archivo con saltos de línea `CRLF`.
+  Se arregla convirtiéndolo a `LF` y creando la base de nuevo (el script solo corre al crear el volumen):
+
+```powershell
+$f = "docker\mariadb-init\01-crear-bases.sh"
+[IO.File]::WriteAllText("$PWD\$f", ((Get-Content $f -Raw) -replace "`r`n","`n"), (New-Object Text.UTF8Encoding $false))
+docker compose down -v
+docker compose up -d
+```
+
+  El archivo `.gitattributes` del repositorio fuerza `LF` en los `.sh`, para que esto no se repita al clonar en Windows.
+- `port is already allocated` o `address already in use` en el puerto 80: apaga Apache de XAMPP. En los puertos 8082 al 8088: ejecuta el comando del paso 2.
+
 ## Despliegue con Docker
 
 Todo el sistema (7 microservicios, MariaDB con una base y un usuario por servicio, y el frontend con Nginx) se levanta con Docker Compose:
@@ -127,3 +210,5 @@ docker compose up -d --build
 - `docker/mariadb-init/01-crear-bases.sh` crea las 7 bases y sus usuarios la primera vez.
 - El frontend se toma de `FRONTEND_DIR` (por defecto `../VeterinariaSanMarcosReact`), que debe contener el `Dockerfile` del proyecto React.
 - Variables de entorno de cada servicio: `*_DB_URL`, `*_DB_USER`, `*_DB_PASSWORD`, `JWT_SECRET`, `APP_CORS_ALLOWED_ORIGIN`, `SERVER_ADDRESS` (opcional).
+
+Guía completa para AWS EC2: [DESPLIEGUE_AWS.md](DESPLIEGUE_AWS.md).
