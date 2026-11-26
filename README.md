@@ -1,6 +1,41 @@
-# Veterinaria San Marcos – Backend (microservicios)
+<div align="center">
 
-Cada carpeta es un proyecto Spring Boot independiente, con su propia base de datos MySQL.
+# Veterinaria San Marcos
+
+### Backend en microservicios (Spring Boot + MariaDB)
+
+Sistema web de la clínica veterinaria: agenda de citas, fichas clínicas, gestión de usuarios y tienda online.
+
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-17+-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![MariaDB](https://img.shields.io/badge/MariaDB-10.11-003545?style=for-the-badge&logo=mariadb&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-Auth-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
+![Swagger](https://img.shields.io/badge/Swagger-OpenAPI-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-EC2-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white)
+![React](https://img.shields.io/badge/React-Frontend-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+
+</div>
+
+**Asignatura:** DSY1104 – Desarrollo FullStack II · Duoc UC · Evaluación Parcial 3 · proyecto en pareja.
+
+## Enlaces
+
+| Qué | Enlace |
+|---|---|
+| Sitio desplegado en AWS | <http://34.203.108.95> |
+| Repositorio del frontend (React) | <https://github.com/domimoly/VeterinariaSanMarcosReact> |
+| Repositorio del backend (este) | <https://github.com/domimoly/VeterinariaSanMarcosBackend> |
+| Swagger de los 7 microservicios | Ver la tabla de [Documentación Swagger](#documentación-swagger--openapi) |
+
+## 1. Contexto del proyecto
+
+La clínica necesita un sistema donde los **tutores** registren a sus mascotas y soliciten citas, la **recepción** gestione la agenda y las fichas clínicas, y la **administración** controle las cuentas, los reportes y el catálogo de la tienda. El backend se divide en **un microservicio por entidad**, cada uno con su propia base de datos, y todos comparten la autenticación con JWT que emite `ms-auth`. El frontend (React) y el backend se despliegan juntos en una instancia EC2 de AWS con Docker Compose.
+
+## 2. Microservicios implementados
+
+Cada carpeta es un proyecto Spring Boot independiente, con su propia base de datos.
 
 | Microservicio | Puerto | Base de datos | Qué hace |
 |---|---|---|---|
@@ -12,27 +47,74 @@ Cada carpeta es un proyecto Spring Boot independiente, con su propia base de dat
 | `ms-productos` | 8087 | `veterinaria_productos` | Catálogo y stock de la tienda (lectura pública, edición solo administrador) |
 | `ms-pedidos` | 8088 | `veterinaria_pedidos` | Compras: calcula el total con el precio real, descuenta stock en `ms-productos` y guarda el pedido |
 
-Swagger de cada uno: `http://localhost:<puerto>/swagger-ui/index.html`
+## 3. Rutas principales (Nginx)
+
+En Docker y AWS el frontend entra por el puerto 80 y Nginx reenvía cada ruta al microservicio correspondiente:
+
+| Ruta pública | Microservicio | Puerto interno |
+|---|---|---|
+| `/api/auth-service/` | `ms-auth` | 8082 |
+| `/api/servicios-service/` | `ms-servicios` | 8083 |
+| `/api/mascotas-service/` | `ms-mascotas` | 8084 |
+| `/api/citas-service/` | `ms-citas` | 8085 |
+| `/api/fichas-service/` | `ms-fichas` | 8086 |
+| `/api/productos-service/` | `ms-productos` | 8087 |
+| `/api/pedidos-service/` | `ms-pedidos` | 8088 |
+
+## Documentación Swagger / OpenAPI
+
+| Microservicio | AWS | Local |
+|---|---|---|
+| `ms-auth` | <http://34.203.108.95:8082/swagger-ui/index.html> | <http://localhost:8082/swagger-ui/index.html> |
+| `ms-servicios` | <http://34.203.108.95:8083/swagger-ui/index.html> | <http://localhost:8083/swagger-ui/index.html> |
+| `ms-mascotas` | <http://34.203.108.95:8084/swagger-ui/index.html> | <http://localhost:8084/swagger-ui/index.html> |
+| `ms-citas` | <http://34.203.108.95:8085/swagger-ui/index.html> | <http://localhost:8085/swagger-ui/index.html> |
+| `ms-fichas` | <http://34.203.108.95:8086/swagger-ui/index.html> | <http://localhost:8086/swagger-ui/index.html> |
+| `ms-productos` | <http://34.203.108.95:8087/swagger-ui/index.html> | <http://localhost:8087/swagger-ui/index.html> |
+| `ms-pedidos` | <http://34.203.108.95:8088/swagger-ui/index.html> | <http://localhost:8088/swagger-ui/index.html> |
+
+Para probar endpoints protegidos: en `ms-auth`, `POST /api/auth/login` entrega el token; con el botón **Authorize** se usa en cualquiera de los 7 Swagger (comparten el mismo secreto JWT).
 
 ## Acceso sin token
+
 Según la regla del caso, **solo `POST /api/auth/login` y `POST /api/auth/registro`** (más Swagger) se pueden usar sin token. Todo lo demás —incluido `/api/auth/perfil`, los pedidos y la edición de productos— responde 401 en JSON sin token válido. La única excepción es **la lectura del catálogo de productos** (`GET /api/productos`), pública porque es una tienda online; comprar sí exige sesión. `PUT /api/productos/stock` es interno (clave `X-Clave-Interna`) y Nginx no lo publica.
 
 ## Roles
+
 - **TUTOR**: solicita citas, ve sus mascotas, sus citas y la ficha de sus mascotas. Compra en la tienda y ve sus pedidos.
 - **RECEPCIONISTA**: ve toda la agenda, confirma y reagenda, registra fichas. Ve todos los pedidos de la tienda, los marca como entregados o los cancela.
 - **ADMINISTRADOR**: acceso total. Además de lo de recepción (y de eliminar mascotas), administra el catálogo de la tienda (`/api/productos`: crear, editar precio y stock, ocultar, eliminar) y gestiona cuentas en `ms-auth`:
   `GET/POST /api/usuarios`, `PUT /api/usuarios/{id}` (nombre, rol, contraseña), `PUT /api/usuarios/{id}/desactivar` y `/activar`.
   No puede desactivarse ni cambiarse el rol a sí mismo. Una cuenta desactivada no puede iniciar sesión.
-  Cuenta inicial: `admin@veterinariasanmarcos.cl` / `Admin123!`.
+
+Cuentas iniciales de las ejecuciones locales (con Docker o sin él): `admin@veterinariasanmarcos.cl` / `Admin123!` y `recepcion@veterinariasanmarcos.cl` / `Recepcion123!`. En AWS las claves de estas cuentas vienen del archivo `.env` del servidor.
 
 ## Secretos
+
 No se guardan en el repositorio. Copia `.env.properties.example` como `.env.properties` en cada carpeta
 y usa **el mismo valor** de `JWT_SECRET` en todos los servicios.
 `ms-productos` y `ms-pedidos` además comparten `CLAVE_INTERNA` (otro valor, distinto del JWT): con ella `ms-pedidos`
 descuenta o devuelve stock en `ms-productos` sin que el cliente pueda hacerlo desde el navegador.
 Para ejecutar sin Docker también se pueden entregar como variables de entorno (ver «Ejecución local»).
 
-## Ejecución local sin Docker (orden para la demostración)
+## Flujo de la tienda
+
+1. `GET /api/productos` (público, como en toda tienda online) entrega el catálogo; el carrito vive en el navegador y solo guarda código y cantidad.
+2. `POST /api/pedidos` (con sesión) recibe los datos de entrega y las líneas. **El precio nunca viaja desde el cliente**:
+   `ms-pedidos` lo toma de `ms-productos`, calcula el total y descuenta el stock en una sola transacción (todo o nada, con bloqueo de filas).
+3. El pedido queda `PAGADO`. Recepción/administrador lo pasan a `ENTREGADO` (`PUT /api/pedidos/{id}/entregar`) o lo `CANCELADO`
+   (`PUT /api/pedidos/{id}/cancelar`, devuelve el stock). Un pedido entregado no se puede cancelar.
+4. Cada tutor ve solo sus pedidos; el personal ve todos. El pago es una simulación en el frontend (se aprueba el 70 % de las veces).
+
+## Pruebas
+
+- **Backend:** `ms-auth` incluye pruebas (`AuthApplicationTests` y `RunChilenoTest`, que valida el RUN con módulo 11). Se ejecutan con `.\mvnw.cmd test` dentro de la carpeta `ms-auth`.
+- **Frontend:** 82 archivos de prueba y 467 pruebas (Vitest + Testing Library) con `npm run test:run`. Ver el repositorio del frontend.
+- **Pruebas de integración manuales:** se hacen contra Swagger y contra el sitio desplegado, con las tres cuentas (tutor, recepción y administrador).
+
+## Instrucciones de ejecución
+
+### Ejecución local sin Docker (orden para la demostración)
 
 Requisitos: JDK 17, MySQL o MariaDB encendido en `localhost:3306` (usuario `root` sin clave, como en XAMPP) y Node.js para el frontend.
 Todos los comandos son de PowerShell y se ejecutan en la carpeta `VeterinariaSanMarcosBackend`.
@@ -87,9 +169,8 @@ OK    ms-pedidos (puerto 8088)
 
 Si alguno sale en rojo, el motivo está al final de su log: `notepad "$env:TEMP\vsm-logs\ms-xxx.log"`.
 
-**4. Probar la API.** Swagger de cada servicio: `http://localhost:<puerto>/swagger-ui/index.html`.
-En `ms-auth` (8082), `POST /api/auth/login` entrega el token; con el botón **Authorize** se usa en los demás servicios.
-Cuentas iniciales: `admin@veterinariasanmarcos.cl` / `Admin123!` y `recepcion@veterinariasanmarcos.cl` / `Recepcion123!`.
+**4. Probar la API.** Swagger de cada servicio: `http://localhost:<puerto>/swagger-ui/index.html`
+(ver la tabla de [Documentación Swagger](#documentación-swagger--openapi)).
 
 **5. Levantar el frontend.** En la carpeta del proyecto React (`VeterinariaSanMarcosReact`):
 
@@ -106,15 +187,7 @@ Se abre en `http://localhost:5173` y usa los servicios que se levantaron arriba.
 Get-NetTCPConnection -LocalPort 8082,8083,8084,8085,8086,8087,8088 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
 
-## Flujo de la tienda
-1. `GET /api/productos` (público, como en toda tienda online) entrega el catálogo; el carrito vive en el navegador y solo guarda código y cantidad.
-2. `POST /api/pedidos` (con sesión) recibe los datos de entrega y las líneas. **El precio nunca viaja desde el cliente**:
-   `ms-pedidos` lo toma de `ms-productos`, calcula el total y descuenta el stock en una sola transacción (todo o nada, con bloqueo de filas).
-3. El pedido queda `PAGADO`. Recepción/administrador lo pasan a `ENTREGADO` (`PUT /api/pedidos/{id}/entregar`) o lo `CANCELADO`
-   (`PUT /api/pedidos/{id}/cancelar`, devuelve el stock). Un pedido entregado no se puede cancelar.
-4. Cada tutor ve solo sus pedidos; el personal ve todos. El pago es una simulación en el frontend (se aprueba el 70 % de las veces).
-
-## Ejecución con Docker en Windows (laboratorio)
+### Ejecución con Docker en Windows (laboratorio)
 
 Levanta todo el sistema igual que en AWS: los 7 microservicios, MariaDB y el frontend con Nginx.
 Requiere Docker Desktop y la carpeta del frontend (`VeterinariaSanMarcosReact`) **al lado** de esta carpeta.
@@ -197,7 +270,7 @@ docker compose up -d
   El archivo `.gitattributes` del repositorio fuerza `LF` en los `.sh`, para que esto no se repita al clonar en Windows.
 - `port is already allocated` o `address already in use` en el puerto 80: apaga Apache de XAMPP. En los puertos 8082 al 8088: ejecuta el comando del paso 2.
 
-## Despliegue con Docker
+### Despliegue con Docker Compose
 
 Todo el sistema (7 microservicios, MariaDB con una base y un usuario por servicio, y el frontend con Nginx) se levanta con Docker Compose:
 
@@ -206,9 +279,30 @@ cp .env.example .env     # completar secretos; .env no se sube a Git
 docker compose up -d --build
 ```
 
-- Solo el contenedor `web` publica el puerto 80; los microservicios se publican únicamente en `127.0.0.1` (Swagger por túnel SSH).
+- El contenedor `web` publica el puerto 80. Los microservicios (8082–8088) publican su Swagger según `SWAGGER_BIND` en `.env`: `127.0.0.1` (por defecto) solo desde la propia máquina; `0.0.0.0` para abrirlos a internet, como en el servidor de AWS.
+- La base de datos es `mariadb:10.11`. Con MariaDB 11.x el conector MySQL con Hibernate no inicia.
 - `docker/mariadb-init/01-crear-bases.sh` crea las 7 bases y sus usuarios la primera vez.
 - El frontend se toma de `FRONTEND_DIR` (por defecto `../VeterinariaSanMarcosReact`), que debe contener el `Dockerfile` del proyecto React.
 - Variables de entorno de cada servicio: `*_DB_URL`, `*_DB_USER`, `*_DB_PASSWORD`, `JWT_SECRET`, `APP_CORS_ALLOWED_ORIGIN`, `SERVER_ADDRESS` (opcional).
 
-Guía completa para AWS EC2: [DESPLIEGUE_AWS.md](DESPLIEGUE_AWS.md).
+## Despliegue en AWS
+
+El sistema está publicado en una instancia **EC2** (t3.large, Ubuntu, 30 GiB) con **Elastic IP**, ejecutando los 9 contenedores del `docker-compose.yml` (MariaDB, 7 microservicios y el frontend con Nginx).
+
+- **Sitio:** <http://34.203.108.95>
+- **Swagger:** `http://34.203.108.95:<puerto>/swagger-ui/index.html`, con los puertos de la tabla de [Documentación Swagger](#documentación-swagger--openapi).
+- **Grupo de seguridad:** 22 (solo la IP del estudiante), 80 y 8082–8088. La base de datos (3306) no se publica.
+- **Secretos:** en el archivo `.env` del servidor, que no se sube a GitHub (`SWAGGER_BIND=0.0.0.0` publica los Swagger).
+- **Actualizar tras un cambio en GitHub:** `git pull && docker compose up -d --build` (o el nombre de un solo servicio, por ejemplo `ms-productos`).
+
+## Stack tecnológico
+
+| Capa | Tecnología |
+|---|---|
+| Backend | Java 17+ (imágenes Docker con Java 21), Spring Boot 4.1, Spring Web, Spring Data JPA, Spring Security, Bean Validation, Lombok |
+| Seguridad | JWT (JJWT 0.12.6), roles TUTOR / RECEPCIONISTA / ADMINISTRADOR |
+| Documentación | springdoc-openapi (Swagger UI) |
+| Base de datos | MariaDB 10.11 (una base y un usuario por microservicio); MySQL/MariaDB de XAMPP en la ejecución local |
+| Frontend | React + Vite, servido por Nginx |
+| Despliegue | Docker, Docker Compose, AWS EC2 |
+| Pruebas | JUnit (backend), Vitest + Testing Library (frontend) |
