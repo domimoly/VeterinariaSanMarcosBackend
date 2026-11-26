@@ -15,7 +15,7 @@ x-microservicio: &microservicio
 services:
   # Una sola instancia de MariaDB con 5 bases y 5 usuarios independientes
   db:
-    image: mariadb:11.4
+    image: mariadb:10.11
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -49,7 +49,7 @@ services:
       ADMIN_CORREO: ${ADMIN_CORREO:-admin@veterinariasanmarcos.cl}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     ports:
-      - "127.0.0.1:8082:8082"   # solo accesible desde la propia instancia (Swagger por túnel SSH)
+      - "${SWAGGER_BIND:-127.0.0.1}:8082:8082"   # Swagger; SWAGGER_BIND=0.0.0.0 en .env lo abre a internet
 
   ms-servicios:
     <<: *microservicio
@@ -60,7 +60,7 @@ services:
       SERVICIOS_DB_USER: servicios_app
       SERVICIOS_DB_PASSWORD: ${SERVICIOS_DB_PASSWORD}
     ports:
-      - "127.0.0.1:8083:8083"
+      - "${SWAGGER_BIND:-127.0.0.1}:8083:8083"
 
   ms-mascotas:
     <<: *microservicio
@@ -71,7 +71,7 @@ services:
       MASCOTAS_DB_USER: mascotas_app
       MASCOTAS_DB_PASSWORD: ${MASCOTAS_DB_PASSWORD}
     ports:
-      - "127.0.0.1:8084:8084"
+      - "${SWAGGER_BIND:-127.0.0.1}:8084:8084"
 
   ms-citas:
     <<: *microservicio
@@ -84,7 +84,7 @@ services:
       MASCOTAS_URL: http://ms-mascotas:8084
       SERVICIOS_URL: http://ms-servicios:8083
     ports:
-      - "127.0.0.1:8085:8085"
+      - "${SWAGGER_BIND:-127.0.0.1}:8085:8085"
 
   ms-fichas:
     <<: *microservicio
@@ -96,7 +96,7 @@ services:
       FICHAS_DB_PASSWORD: ${FICHAS_DB_PASSWORD}
       MASCOTAS_URL: http://ms-mascotas:8084
     ports:
-      - "127.0.0.1:8086:8086"
+      - "${SWAGGER_BIND:-127.0.0.1}:8086:8086"
 
   ms-productos:
     <<: *microservicio
@@ -108,7 +108,7 @@ services:
       PRODUCTOS_DB_PASSWORD: ${PRODUCTOS_DB_PASSWORD}
       CLAVE_INTERNA: ${CLAVE_INTERNA}
     ports:
-      - "127.0.0.1:8087:8087"
+      - "${SWAGGER_BIND:-127.0.0.1}:8087:8087"
 
   ms-pedidos:
     <<: *microservicio
@@ -121,7 +121,7 @@ services:
       PRODUCTOS_URL: http://ms-productos:8087
       CLAVE_INTERNA: ${CLAVE_INTERNA}
     ports:
-      - "127.0.0.1:8088:8088"
+      - "${SWAGGER_BIND:-127.0.0.1}:8088:8088"
 
   # React compilado + Nginx. Único punto público (puerto 80).
   web:
